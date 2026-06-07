@@ -1,0 +1,117 @@
+┌───────────────────────────────────────────────────────────────────────────┐
+│ REPORTE OFICIAL DEL CENTRO DE OPERACIONES DE SEGURIDAD (SOC)              │
+│ SEGMENTO DE AUDITORÍA INTERCEPTADO: SESIÓN ACTUAL SOC                             │
+└───────────────────────────────────────────────────────────────────────────┘
+
+ 🔴 AMENAZAS EN COBERTURA PERIMETRAL:
+ ------------------------------------------------------------------------─
+  • [2026-06-07 11:15:31.023015] Evento: DISPOSITIVO_NO_AUTORIZADO      | Host Comprometido: 4.149.210.175
+  • [2026-06-07 11:15:29.116426] Evento: DISPOSITIVO_NO_AUTORIZADO      | Host Comprometido: 23.47.207.112
+  • [2026-06-07 11:15:28.156705] Evento: DISPOSITIVO_NO_AUTORIZADO      | Host Comprometido: 104.208.203.89
+  • [2026-06-07 11:15:16.114508] Evento: DISPOSITIVO_NO_AUTORIZADO      | Host Comprometido: 135.234.174.40
+  • [2026-06-07 11:15:15.861025] Evento: DISPOSITIVO_NO_AUTORIZADO      | Host Comprometido: 18.236.126.72
+  • [2026-06-07 11:14:58.932202] Evento: DISPOSITIVO_NO_AUTORIZADO      | Host Comprometido: 34.232.154.240
+  • [2026-06-07 11:14:55.279144] Evento: DISPOSITIVO_NO_AUTORIZADO      | Host Comprometido: 51.116.253.170
+  • [2026-06-07 11:14:51.632129] Evento: DISPOSITIVO_NO_AUTORIZADO      | Host Comprometido: 34.128.128.0
+  • [2026-06-07 11:14:50.064143] Evento: DISPOSITIVO_NO_AUTORIZADO      | Host Comprometido: 35.209.157.106
+  • [2026-06-07 11:14:39.209340] Evento: DISPOSITIVO_NO_AUTORIZADO      | Host Comprometido: 162.254.195.69
+  • [2026-06-07 11:14:39.084427] Evento: DISPOSITIVO_NO_AUTORIZADO      | Host Comprometido: 8.8.8.8
+  • [2026-06-07 11:14:38.883419] Evento: DISPOSITIVO_NO_AUTORIZADO      | Host Comprometido: 192.168.1.254
+  • [2026-06-07 11:14:38.459794] Evento: DISPOSITIVO_NO_AUTORIZADO      | Host Comprometido: 192.168.1.69
+
+ 🟢 CONTENIDOS REGISTRADOS EN LA BITÁCORA:
+ ------------------------------------------------------------------------─
+  • [2026-06-07 11:15:51.419576] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:51.418235] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:50.388289] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:50.387035] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:49.368918] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:49.367413] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:48.350239] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:48.347247] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:47.334024] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:47.331369] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:46.313677] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:46.311941] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:45.303005] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:45.301965] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:44.278519] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:44.276867] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:43.262404] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:43.260001] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:42.243055] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:42.241239] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:32.026402] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:31.066070] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:29.975039] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:29.228468] 192.168.1.69    -> DNS   | Destino: LaMalCriada
+  • [2026-06-07 11:15:29.198596] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:29.172617] 192.168.1.69    -> HTTP  | Destino: www.msftconnecttest.com
+  • [2026-06-07 11:15:29.047638] 192.168.1.254   -> DNS   | Destino: ipv6.msftconnecttest.com
+  • [2026-06-07 11:15:29.022120] 192.168.1.254   -> DNS   | Destino: www.msftconnecttest.com
+  • [2026-06-07 11:15:28.993759] 192.168.1.254   -> DNS   | Destino: www.msftconnecttest.com
+  • [2026-06-07 11:15:28.967725] 192.168.1.254   -> DNS   | Destino: ipv6.msftconnecttest.com
+  • [2026-06-07 11:15:28.940814] 192.168.1.69    -> DNS   | Destino: ipv6.msftconnecttest.com
+  • [2026-06-07 11:15:28.916051] 192.168.1.69    -> DNS   | Destino: ipv6.msftconnecttest.com
+  • [2026-06-07 11:15:28.886967] 192.168.1.69    -> DNS   | Destino: www.msftconnecttest.com
+  • [2026-06-07 11:15:28.828537] 192.168.1.69    -> DNS   | Destino: www.msftconnecttest.com
+  • [2026-06-07 11:15:28.589947] 192.168.1.69    -> DNS   | Destino: LaMalCriada
+  • [2026-06-07 11:15:28.223465] 192.168.1.69    -> DNS   | Destino: LaMalCriada
+  • [2026-06-07 11:15:27.853864] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:27.754879] 192.168.1.69    -> DNS   | Destino: LaMalCriada
+  • [2026-06-07 11:15:26.836695] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:25.821110] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:24.803227] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:23.784468] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:22.769347] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:21.747084] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:20.728879] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:19.717363] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:18.695507] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:17.679038] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:16.663339] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:15.919035] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:15.386038] 192.168.1.69    -> HTTPS | Destino: Servidor Seguro (18.236.126.72)
+  • [2026-06-07 11:15:14.623847] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:13.607155] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:12.594005] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:11.574948] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:10.556758] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:09.540074] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:08.520369] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:07.535572] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:06.487003] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:05.472149] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:04.449618] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:03.435642] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:02.416382] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:01.397917] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:15:00.383550] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:14:59.362895] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:14:58.815587] 192.168.1.69    -> HTTPS | Destino: Servidor Seguro (34.232.154.240)
+  • [2026-06-07 11:14:58.345818] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:14:57.341165] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:14:56.311411] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:14:55.348816] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:14:54.276064] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:14:53.256776] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:14:52.241102] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:14:51.222181] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:14:50.204799] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:14:49.187187] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:14:48.170034] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:14:47.152010] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:14:46.135335] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:14:45.120392] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:14:44.101750] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:14:43.086205] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:14:42.067257] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:14:41.050747] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:14:40.032149] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:14:39.014772] 192.168.1.69    -> ICMP  | Destino: Rastreo hacia 8.8.8.8
+  • [2026-06-07 11:14:38.948829] 192.168.1.254   -> DNS   | Destino: optimizationguide-pa.googleapis.com
+  • [2026-06-07 11:14:38.928295] 192.168.1.254   -> DNS   | Destino: optimizationguide-pa.googleapis.com
+  • [2026-06-07 11:14:38.906947] 192.168.1.254   -> DNS   | Destino: optimizationguide-pa.googleapis.com
+  • [2026-06-07 11:14:38.852711] 192.168.1.69    -> DNS   | Destino: optimizationguide-pa.googleapis.com
+  • [2026-06-07 11:14:38.832244] 192.168.1.69    -> DNS   | Destino: optimizationguide-pa.googleapis.com
+  • [2026-06-07 11:14:38.806932] 192.168.1.69    -> DNS   | Destino: optimizationguide-pa.googleapis.com
