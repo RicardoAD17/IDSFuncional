@@ -1,0 +1,60 @@
+Este es un Sistema de Detección de Intrusos (IDS) diseñado para el monitoreo de infraestructura de red en tiempo real, orientado a la seguridad perimetral y análisis forense.
+
+1. Guía de Instalación y Requisitos
+Prerrequisitos del Sistema
+Sistema Operativo: Recomendado Kali Linux (por la gestión nativa de librerías de red).
+
+Dependencias:
+
+Python 3.10+
+
+libpcap (para captura de paquetes): sudo apt install libpcap-dev
+
+git
+
+Configuración SMTP:
+
+Se requiere una cuenta de Gmail con Contraseña de Aplicación habilitada (no usar la contraseña de acceso directo).
+
+El sistema utiliza variables de entorno mediante un archivo .env.
+
+Pasos de Instalación
+Clonar el repositorio: git clone <URL_DE_TU_REPO>
+
+Crear entorno virtual: python3 -m venv ids_env && source ids_env/bin/activate
+
+Instalar dependencias: pip install -r requirements.txt
+
+Configurar variables: Crear un archivo .env en la raíz con:
+
+Fragmento de código
+REMITENTE_EMAIL=tu_correo@gmail.com
+REMITENTE_PASSWORD=tu_contraseña_de_aplicacion
+2. Instrucciones de Operación
+Módulo de Lista Blanca (Capa 2 y 3)
+Al iniciar, el sistema ejecutará un Auto-Discovery. Si tu máquina no está registrada, te solicitará un nombre de propietario.
+
+Para autorizar otros equipos, accede al Panel IAM (Opción 2) -> Modificar Lista Blanca. Ingresa la dirección MAC física y la IP estática del equipo a proteger.
+
+Monitoreo en Tiempo Real
+Opción 1: Inicia el monitoreo SOC.
+
+El sistema captura tráfico local (DNS, HTTP/S, ICMP).
+
+Controles: Usa [W] y [S] para navegar en la bitácora y [Q] para regresar al menú.
+
+Interpretación de Alertas
+Si un dispositivo no está en la Lista Blanca, el sistema disparará un correo electrónico con el asunto: "IDS Alerta: Intruso" detallando la MAC, IP y el protocolo que activó la detección.
+
+3. Troubleshooting Básico
+¿El correo de alerta llega a Spam?
+
+Verifica que la "Contraseña de aplicación" de Gmail sea correcta.
+
+Agrega el correo remitente a tus contactos de confianza en la cuenta destino.
+
+¿No detecta tráfico de otros equipos?
+
+Asegúrate de estar en una red donde el tráfico pase por tu tarjeta (o usa arpspoof para envenenamiento ARP).
+
+Verifica que la interfaz de red esté en modo promiscuo (ifconfig eth0 promisc).
