@@ -40,6 +40,8 @@ from modelos_db import Session, EquipoAutorizado, BitacoraTrafico, RegistroAmena
 CACHE_EQUIPOS_AUTORIZADOS = {}
 BLACKLIST_IPS = set()
 RATE_LIMIT_CACHE = {}
+RED_LOCAL_PREFIJO = ""
+
 
 def hora_local():
     """Obtiene la hora de México y la limpia para que SQLite la entienda."""
@@ -403,22 +405,32 @@ def enviar_alerta_estructurada(asunto, cuerpo):
 # ==========================================
 # 3. MOTOR DE ANÁLISIS DE PAQUETES
 # ==========================================
+
 def procesar_paquete(paquete):
     if not SISTEMA_ACTIVO:
         return
     local_session = Session()
     try:
-        # Filtro SMTP
+        # ── Filtro SMTP — evitar bucles con nuestros propios correos ──
         if paquete.haslayer(IP) and paquete.haslayer(TCP):
-            if paquete[TCP].dport in [465, 587]:
+            if paquete[TCP].dport in [465, 587] or paquete[TCP].sport in [465, 587]:
                 return
 
-        # MÓDULO 1: Control de acceso perimetral
+        # ── MÓDULO 1: Control de acceso perimetral (Capa 2 y 3) ──────
+        # Solo analiza IPs del segmento local (evita alertas por tráfico
+        # de IPs externas que son ruteadas por el gateway)
         if paquete.haslayer(Ether) and paquete.haslayer(IP):
-            mac_src = paquete[Ether].src.lower() 
+            mac_src = paquete[Ether].src.lower()
             ip_src  = paquete[IP].src
 
-            if ip_src.startswith(("192.168.", "10.", "172.")):
+            es_local = (
+                RED_LOCAL_PREFIJO
+                and ip_src.startswith(RED_LOCAL_PREFIJO)
+                and not ip_src.startswith("127.")
+                and ip_src != "0.0.0.0"
+            )
+
+            if es_local:
                 ip_autorizada = CACHE_EQUIPOS_AUTORIZADOS.get(mac_src)
 
                 if ip_autorizada != ip_src:
@@ -430,9 +442,12 @@ def procesar_paquete(paquete):
 
                         nombre_host  = obtener_nombre_equipo(ip_src)
                         tipo_trafico = "IP Genérica"
-                        if paquete.haslayer(TCP):   tipo_trafico = f"TCP/{paquete[TCP].dport}"
-                        elif paquete.haslayer(UDP): tipo_trafico = f"UDP/{paquete[UDP].dport}"
-                        elif paquete.haslayer('ICMP'): tipo_trafico = "ICMP (Ping)"
+                        if paquete.haslayer(TCP):
+                            tipo_trafico = f"TCP/{paquete[TCP].dport}"
+                        elif paquete.haslayer(UDP):
+                            tipo_trafico = f"UDP/{paquete[UDP].dport}"
+                        elif paquete.haslayer('ICMP'):
+                            tipo_trafico = "ICMP (Ping)"
 
                         nueva_amenaza = RegistroAmenazas(
                             ip_implicada=ip_src,
@@ -445,7 +460,7 @@ def procesar_paquete(paquete):
 
                         cuerpo = (
                             f"{'='*58}\n"
-                            f" EXCEPCIÓN FORENSE: DISPOSITIVO NO AUTORIZADO DETECTADO\n"
+                            f" EXCEPCIÓN FORENSE: DISPOSITIVO NO AUTORIZADO\n"
                             f"{'='*58}\n\n"
                             f"  IP Local    : {ip_src}\n"
                             f"  MAC Física  : {mac_src}\n"
@@ -454,22 +469,33 @@ def procesar_paquete(paquete):
                             f"  Timestamp   : {hora_local().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
                             f"Requiere autorización en el panel IAM."
                         )
-                        EMAIL_POOL.submit(enviar_alerta_estructurada, "IDS Alerta: Intruso", cuerpo)
+                        EMAIL_POOL.submit(
+                            enviar_alerta_estructurada,
+                            "IDS Alerta: Intruso en la Red", cuerpo
+                        )
 
-        # MÓDULO 2: Bitácora
+        # ── MÓDULO 2: Bitácora de tráfico global ─────────────────────
         if paquete.haslayer(IP):
             ip_src = paquete[IP].src
             ip_dst = paquete[IP].dst
             nuevo_log = None
 
+            # DNS — nombre de dominio consultado
             if paquete.haslayer(DNSQR):
                 dominio = paquete[DNSQR].qname.decode('utf-8', errors='ignore').rstrip('.')
-                if dominio and not dominio.endswith("arpa") and "gmail.com" not in dominio:
+                if (dominio
+                        and not dominio.endswith("arpa")
+                        and "in-addr" not in dominio
+                        and "gmail.com" not in dominio):
                     nuevo_log = BitacoraTrafico(
                         ip_origen=ip_src, dominio_visitado=dominio,
                         protocolo="DNS", timestamp=hora_local()
                     )
-            elif paquete.haslayer(TCP) and paquete[TCP].dport == 80 and paquete.haslayer(Raw):
+
+            # HTTP — host visible en el payload
+            elif (paquete.haslayer(TCP)
+                  and paquete[TCP].dport == 80
+                  and paquete.haslayer(Raw)):
                 payload = paquete[Raw].load.decode('utf-8', errors='ignore')
                 for linea in payload.split('\r\n'):
                     if linea.startswith("Host: "):
@@ -479,14 +505,24 @@ def procesar_paquete(paquete):
                             protocolo="HTTP", timestamp=hora_local()
                         )
                         break
-            elif paquete.haslayer(TCP) and paquete[TCP].dport == 443 and paquete[TCP].flags == "S":
-                nuevo_log = BitacoraTrafico(
-                    ip_origen=ip_src, dominio_visitado=f"Servidor Seguro ({ip_dst})",
+
+            # HTTPS — resolvemos la IP destino a nombre si es posible
+            elif (paquete.haslayer(TCP)
+                  and paquete[TCP].dport == 443
+                  and paquete[TCP].flags == "S"):
+                nombre_dst = obtener_nombre_equipo(ip_dst)
+                destino    = nombre_dst if nombre_dst != "Host_No_Resuelto" else ip_dst
+                nuevo_log  = BitacoraTrafico(
+                    ip_origen=ip_src,
+                    dominio_visitado=f"HTTPS → {destino}",
                     protocolo="HTTPS", timestamp=hora_local()
                 )
+
+            # ICMP — ping/rastreo
             elif paquete.haslayer('ICMP') and paquete['ICMP'].type == 8:
                 nuevo_log = BitacoraTrafico(
-                    ip_origen=ip_src, dominio_visitado=f"Ping hacia {ip_dst}",
+                    ip_origen=ip_src,
+                    dominio_visitado=f"Ping → {ip_dst}",
                     protocolo="ICMP", timestamp=hora_local()
                 )
 
@@ -494,28 +530,28 @@ def procesar_paquete(paquete):
                 local_session.add(nuevo_log)
                 local_session.commit()
 
-            # MÓDULO 3: Blacklist
+            # ── MÓDULO 3: Threat Intelligence — blacklist ─────────────
             if ip_dst in BLACKLIST_IPS:
                 tiempo_actual = time.time()
                 ultimo_aviso  = RATE_LIMIT_CACHE.get(ip_dst, 0)
                 if tiempo_actual - ultimo_aviso > 600:
                     RATE_LIMIT_CACHE[ip_dst] = tiempo_actual
-                    correos_abuso  = analizar_whois_abuso(ip_dst)
-                    nombre_origen  = obtener_nombre_equipo(ip_src)
-                    cuerpo_alerta  = (
+
+                    correos_abuso = analizar_whois_abuso(ip_dst)
+                    nombre_origen = obtener_nombre_equipo(ip_src)
+                    cuerpo_alerta = (
                         f"{'='*58}\n"
-                        f" ALERTA FORENSE: CONEXIÓN A IP DE MALWARE DETECTADA\n"
+                        f" ALERTA FORENSE: CONEXIÓN A IP DE MALWARE\n"
                         f"{'='*58}\n"
                         f"  Equipo Comprometido : {ip_src} ({nombre_origen})\n"
                         f"  IP Bloqueada        : {ip_dst}\n"
                         f"  Contacto de Abuso   : {correos_abuso}\n"
                         f"{'='*58}"
                     )
-                    threading.Thread(
-                        target=enviar_alerta_estructurada,
-                        args=("Emergencia IDS: Conexión Externa Peligrosa", cuerpo_alerta),
-                        daemon=True
-                    ).start()
+                    EMAIL_POOL.submit(
+                        enviar_alerta_estructurada,
+                        "Emergencia IDS: Conexión a IP Maliciosa", cuerpo_alerta
+                    )
 
                     nueva_amenaza = RegistroAmenazas(
                         ip_implicada=ip_dst,
@@ -530,11 +566,92 @@ def procesar_paquete(paquete):
         local_session.rollback()
     finally:
         local_session.close()
+# ==========================================
+# MOTOR DE ANÁLISIS DE PAQUETES — VERSIÓN LIMPIA
+# ==========================================
+
+def detectar_interfaz_y_red():
+    """
+    Detecta automáticamente la interfaz activa y el segmento de red.
+    Funciona en clase A (10.x), B (172.16-31.x) y C (192.168.x).
+    """
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip_local = s.getsockname()[0]
+        s.close()
+
+        # Detectar prefijo de red según clase
+        partes = ip_local.split(".")
+        if ip_local.startswith("10."):
+            prefijo = "10."
+        elif ip_local.startswith("172."):
+            prefijo = f"172.{partes[1]}."
+        else:  # 192.168.x.x
+            prefijo = f"{partes[0]}.{partes[1]}.{partes[2]}."
+
+        from scapy.all import conf
+        interfaz = conf.iface
+        return interfaz, ip_local, prefijo
+
+    except Exception as e:
+        print(f"[!] No se pudo detectar la red: {e}")
+        return None, None, None
+
 
 def arrancar_sniffer():
-    sniff(prn=procesar_paquete, store=False, promisc=True)
+    """
+    Arranca el sniffer en la interfaz correcta detectada automáticamente.
+    Captura TODO el tráfico visible en el segmento de red.
+    """
+    interfaz, ip_local, prefijo = detectar_interfaz_y_red()
 
+    if not interfaz:
+        print("[-] No se pudo determinar la interfaz. Abortando sniffer.")
+        return
 
+    print(f"[*] Interfaz activa  : {interfaz}")
+    print(f"[*] IP del sensor    : {ip_local}")
+    print(f"[*] Segmento de red  : {prefijo}0/24")
+    print(f"[*] Modo promiscuo   : ACTIVADO")
+
+    # Guardar prefijo globalmente para usarlo en procesar_paquete
+    global RED_LOCAL_PREFIJO
+    RED_LOCAL_PREFIJO = prefijo
+
+    sniff(
+        iface=interfaz,
+        prn=procesar_paquete,
+        store=False,
+        promisc=True
+    )
+# ==========================================
+# MÓDULO EXTRA: INTERCEPCIÓN ARP (MAN-IN-THE-MIDDLE)
+# ==========================================
+def habilitar_ip_forwarding():
+    """Evita que el equipo víctima se quede sin internet al interceptarlo."""
+    os.system("echo 1 > /proc/sys/net/ipv4/ip_forward")
+
+def restaurar_red(ip_victima, ip_router):
+    """Devuelve la red a la normalidad al cerrar el IDS."""
+    send(ARP(op=2, pdst=ip_victima, psrc=ip_router, hwdst="ff:ff:ff:ff:ff:ff"), count=4, verbose=False)
+    send(ARP(op=2, pdst=ip_router, psrc=ip_victima, hwdst="ff:ff:ff:ff:ff:ff"), count=4, verbose=False)
+    os.system("echo 0 > /proc/sys/net/ipv4/ip_forward")
+
+def hilo_arp_spoofing(ip_victima, ip_router):
+    """Engaña al router y a la víctima para que el tráfico pase por el IDS."""
+    habilitar_ip_forwarding()
+    try:
+        while SISTEMA_ACTIVO:
+            # Engañar a la víctima
+            send(ARP(op=2, pdst=ip_victima, psrc=ip_router), verbose=False)
+            # Engañar al router
+            send(ARP(op=2, pdst=ip_router, psrc=ip_victima), verbose=False)
+            time.sleep(2)
+    except Exception:
+        pass
+    finally:
+        restaurar_red(ip_victima, ip_router)
 # ==========================================
 # 4. INTERFAZ GRÁFICA MEJORADA (RICH)
 # ==========================================
@@ -704,25 +821,23 @@ def ejecutar_reporte_soc(tipo, horas=0):
 # ==========================================
 def iniciar_soc_en_vivo():
     global SISTEMA_ACTIVO, PAUSA_INTERFAZ, OFFSET_PANTALLA, TIEMPO_INICIO
-    global ULTIMO_ID_AMENAZA, ULTIMO_ID_TRAFICO
-    
-    # --- LIMPIEZA DE SESIONES ANTERIORES ---
+
+    # Limpiar registros de sesión anterior
     clean_session = Session()
     try:
         clean_session.query(RegistroAmenazas).delete()
         clean_session.query(BitacoraTrafico).delete()
         clean_session.commit()
-    except:
+    except Exception:
         clean_session.rollback()
     finally:
         clean_session.close()
-    # ---------------------------------------
 
     SISTEMA_ACTIVO  = True
     OFFSET_PANTALLA = 0
     PAUSA_INTERFAZ  = False
-    TIEMPO_INICIO = hora_local()
-    
+    TIEMPO_INICIO   = hora_local()
+
     cargar_cache_listas()
     threading.Thread(target=sincronizar_bd, daemon=True).start()
     threading.Thread(target=arrancar_sniffer, daemon=True).start()
@@ -738,9 +853,12 @@ def iniciar_soc_en_vivo():
                 rlist, _, _ = select.select([sys.stdin], [], [], 0.25)
                 if rlist:
                     tecla = sys.stdin.read(1).lower()
-                    if tecla == 'w': OFFSET_PANTALLA += 5
-                    elif tecla == 's': OFFSET_PANTALLA = max(0, OFFSET_PANTALLA - 5)
-                    elif tecla == 'r': OFFSET_PANTALLA = 0
+                    if tecla == 'w':
+                        OFFSET_PANTALLA += 5
+                    elif tecla == 's':
+                        OFFSET_PANTALLA = max(0, OFFSET_PANTALLA - 5)
+                    elif tecla == 'r':
+                        OFFSET_PANTALLA = 0
                     elif tecla == 'q':
                         SISTEMA_ACTIVO = False
                         break
@@ -748,7 +866,7 @@ def iniciar_soc_en_vivo():
                         PAUSA_INTERFAZ = True
                         live.stop()
                         termios.tcsetattr(fd, termios.TCSADRAIN, ajustes_originales)
-                        if tecla == 'p': ejecutar_reporte_soc(1)
+                        if tecla == 'p':   ejecutar_reporte_soc(1)
                         elif tecla == 'h': ejecutar_reporte_soc(2, horas=2)
                         elif tecla == 'c': ejecutar_reporte_soc(3)
                         tty.setcbreak(fd)
@@ -758,8 +876,6 @@ def iniciar_soc_en_vivo():
         termios.tcsetattr(fd, termios.TCSADRAIN, ajustes_originales)
         print("\n[*] Monitor detenido. Volviendo al menú principal.")
         time.sleep(1)
-
-
 # ==========================================
 # 7. AUTO-DISCOVERY Y BUCLE PRINCIPAL
 # ==========================================

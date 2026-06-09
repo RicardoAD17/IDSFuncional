@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime
+from sqlalchemy.pool import NullPool                          # ← esta línea faltaba
 from sqlalchemy.orm import declarative_base, sessionmaker
 from datetime import datetime
 from sqlcipher3 import dbapi2 as sqlite
@@ -61,7 +62,8 @@ def db_creator():
 engine = create_engine(
     'sqlite://',
     creator=db_creator,
-    connect_args={"check_same_thread": False}
+    connect_args={"check_same_thread": False},
+    poolclass=NullPool  # ← cada sesión maneja su propia conexión
 )
 Session = sessionmaker(bind=engine)
 Base.metadata.create_all(engine)
