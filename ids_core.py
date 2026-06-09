@@ -1,29 +1,3 @@
-"""
-=============================================================================
- SISTEMA DE DETECCIÓN DE INTRUSOS (IDS) INSTITUCIONAL
-=============================================================================
- DOCUMENTACIÓN SEGURA Y CUMPLIMIENTO:
- 
- 1. PROTECCIÓN DE CREDENCIALES: 
-    Este código no contiene contraseñas en texto plano (Hardcoded). 
-    Las credenciales SMTP y configuración de entorno se cargan de forma 
-    dinámica mediante la librería dotenv desde un archivo cifrado o 
-    restringido (.env), cumpliendo con estándares de Secure Coding.
- 
- 2. ARQUITECTURA Y MODELO OSI:
-    - Capa 2 (Enlace): Validación de direcciones MAC (Whitelist dinámica).
-    - Capa 3 (Red): Filtrado de IPs y análisis de paquetes ICMP.
-    - Capa 4 (Transporte): Detección heurística de escaneo de puertos (TCP SYN).
-    - Capa 7 (Aplicación): Deep Packet Inspection ligero (HTTP, DNS, TLS SNI).
- 
- 3. MARCO LEGAL (MÉXICO):
-    El almacenamiento de direcciones IP/MAC y bitácoras de navegación 
-    (BitacoraTrafico) constituye tratamiento de datos personales bajo la 
-    LFPDPPP. El despliegue de este módulo asume la existencia de una Política 
-    de Uso Aceptable de TI y un Aviso de Privacidad firmado por los usuarios.
-=============================================================================
-"""
-
 import time
 import threading
 import socket
@@ -57,22 +31,18 @@ from modelos_db import Session, EquipoAutorizado, BitacoraTrafico, RegistroAmena
 
 load_dotenv()
 
-# Pool de hilos persistente para envío de alertas por correo
+
 EMAIL_POOL = ThreadPoolExecutor(max_workers=3)
 
-# ==========================================
-# VARIABLES GLOBALES Y CACHÉ EN RAM
-# ==========================================
+
 CACHE_EQUIPOS_AUTORIZADOS = {}
 BLACKLIST_IPS = set()
 RATE_LIMIT_CACHE = {}
 RED_LOCAL_PREFIJO = ""
 
-# Memoria temporal para módulos de heurística
-ARP_TABLE_CACHE = {}  # Mapeo en vivo de {IP: MAC} para detectar Spoofing
-PORT_SCAN_CACHE = {}  # Rastreo de comportamiento de escaneo {ip_origen: {inicio, puertos}}
+ARP_TABLE_CACHE = {}  
+PORT_SCAN_CACHE = {}  
 
-# Diccionario para Deep Packet Inspection (DPI) en Capa 7
 PUERTOS_COMUNES = {
     20: "FTP-Data", 21: "FTP", 22: "SSH", 23: "Telnet",
     67: "DHCP-Server", 68: "DHCP-Client", 110: "POP3", 123: "NTP",
@@ -94,10 +64,8 @@ ULTIMO_ID_TRAFICO = 0
 
 console = Console()
 
-# ==========================================
-# 1. AUTENTICACIÓN Y GESTIÓN IAM
-# ==========================================
-def autenticar_admin():
+# §IC-01 
+def autenticar_admin(): 
     print("\n--- INICIO DE SESIÓN ---")
     username = input("Usuario: ")
     password = obtener_password_seguro("Contraseña: ")
@@ -273,9 +241,7 @@ def menu_configuracion_iam(usuario_logueado):
             elif opc == "4": gestionar_configuracion_email()
         elif opc == "0": break
 
-# ==========================================
-# 2. SERVICIOS DE RED Y NOTIFICACIONES
-# ==========================================
+# §IC-02
 def cargar_cache_listas():
     global CACHE_EQUIPOS_AUTORIZADOS, BLACKLIST_IPS
     local_session = Session()
@@ -337,10 +303,8 @@ def enviar_alerta_estructurada(asunto, cuerpo_html):
     msg['From'] = REMITENTE
     msg['To'] = admin.email
     
-    # Mensaje fallback por si el cliente de correo no soporta HTML
     msg.set_content("ALERTA IDS: Por favor, visualiza este correo en un cliente que soporte HTML para ver el reporte forense completo.")
     
-    # Inyectamos el HTML rico
     msg.add_alternative(cuerpo_html, subtype='html')
 
     try:
@@ -357,29 +321,25 @@ def enviar_alerta_estructurada(asunto, cuerpo_html):
         except Exception:
             pass
 
-# ==========================================
-# 3. MOTOR CENTRAL DE ANÁLISIS DE PAQUETES
-# ==========================================
+# §IC-03 
 def procesar_paquete(paquete):
     if not SISTEMA_ACTIVO:
         return
     local_session = Session()
     try:
-        # ── FILTROS ANTI-RUIDO DE RED ──
-        # Ignorar nuestro propio tráfico de alertas SMTP
+        
         if paquete.haslayer(IP) and paquete.haslayer(TCP):
             if paquete[TCP].dport in [465, 587] or paquete[TCP].sport in [465, 587]:
                 return
         
-        # Ignorar pings de telemetría a DNS públicos y ruido Multicast (.local)
+        
         if paquete.haslayer(IP):
             if paquete.haslayer('ICMP') and paquete[IP].dst in ["8.8.8.8", "1.1.1.1"]:
                 return
             if paquete.haslayer(UDP) and paquete[UDP].dport == 5353:
                 return
 
-        # ── MÓDULO HEURÍSTICO: Detección de Comportamientos de Ataque ──
-        # A) ARP Spoofing (Suplantación de identidad en capa de enlace)
+        
         if paquete.haslayer(ARP) and paquete[ARP].op in (1, 2):
             ip_arp, mac_arp = paquete[ARP].psrc, paquete[ARP].hwsrc.lower()
             if mac_arp not in ("00:00:00:00:00:00", "ff:ff:ff:ff:ff:ff"):
@@ -389,7 +349,7 @@ def procesar_paquete(paquete):
                         if t_actual - RATE_LIMIT_CACHE.get(f"ARP_{ip_arp}", 0) > 60:
                             RATE_LIMIT_CACHE[f"ARP_{ip_arp}"] = t_actual
                             
-                            # Plantilla HTML para Spoofing
+                            
                             asunto = f"[IDS ALERTA - SPOOFING] Posible MITM afectando IP: {ip_arp}"
                             cuerpo_html = f"""
                             <div style="font-family: Arial, sans-serif; color: #333;">
@@ -409,7 +369,7 @@ def procesar_paquete(paquete):
                 else:
                     ARP_TABLE_CACHE[ip_arp] = mac_arp
 
-        # B) Port Scanning (Escaneo táctico de Nmap)
+        
         if paquete.haslayer(TCP) and paquete.haslayer(IP) and paquete[TCP].flags == "S":
             ip_atc, p_obj, t_act = paquete[IP].src, paquete[TCP].dport, time.time()
             if ip_atc not in PORT_SCAN_CACHE or t_act - PORT_SCAN_CACHE[ip_atc]['inicio'] > 5:
@@ -420,7 +380,6 @@ def procesar_paquete(paquete):
                 if t_act - RATE_LIMIT_CACHE.get(f"SCAN_{ip_atc}", 0) > 60:
                     RATE_LIMIT_CACHE[f"SCAN_{ip_atc}"] = t_act
                     
-                    # Plantilla HTML para Port Scanning
                     asunto = f"[IDS ALERTA - NMAP] Escaneo de puertos desde IP: {ip_atc}"
                     cuerpo_html = f"""
                     <div style="font-family: Arial, sans-serif; color: #333;">
@@ -438,7 +397,7 @@ def procesar_paquete(paquete):
                     local_session.add(RegistroAmenazas(ip_implicada=ip_atc, tipo_amenaza="ESCANEO_PUERTOS_NMAP", alerta_enviada=True, timestamp=hora_local()))
                     local_session.commit()
 
-        # ── MÓDULO 1: Control de Acceso Perimetral (MAC/IP Whitelist) ──
+        
         if paquete.haslayer(Ether) and paquete.haslayer(IP):
             mac_src, ip_src = paquete[Ether].src.lower(), paquete[IP].src
             if RED_LOCAL_PREFIJO and ip_src.startswith(RED_LOCAL_PREFIJO) and not ip_src.startswith("127."):
@@ -469,7 +428,7 @@ def procesar_paquete(paquete):
                         local_session.add(RegistroAmenazas(ip_implicada=ip_src, tipo_amenaza="DISPOSITIVO_NO_AUTORIZADO", alerta_enviada=True, timestamp=hora_local()))
                         local_session.commit()
 
-        # ── MÓDULO 2: Bitácora de Tráfico Global (DPI Ligero) ──
+       
         if paquete.haslayer(IP):
             ip_src, ip_dst, nuevo_log, registrado = paquete[IP].src, paquete[IP].dst, None, False
 
@@ -492,7 +451,7 @@ def procesar_paquete(paquete):
                 nuevo_log = BitacoraTrafico(ip_origen=ip_src, dominio_visitado=f"Ping → {ip_dst}", protocolo="ICMP", timestamp=hora_local())
                 registrado = True
             
-            # Recolector maestro de otros protocolos comunes
+            
             if not registrado and (paquete.haslayer(TCP) or paquete.haslayer(UDP)):
                 p_dst = paquete[TCP if paquete.haslayer(TCP) else UDP].dport
                 if p_dst in PUERTOS_COMUNES:
@@ -502,16 +461,13 @@ def procesar_paquete(paquete):
                 local_session.add(nuevo_log)
                 local_session.commit()
 
-            # ── MÓDULO 3: Threat Intelligence (Blacklist) ──
             if ip_dst in BLACKLIST_IPS:
                 t_act = time.time()
                 if t_act - RATE_LIMIT_CACHE.get(ip_dst, 0) > 600:
                     RATE_LIMIT_CACHE[ip_dst] = t_act
                     
-                    # Llamada a la nueva función WHOIS enriquecida
                     whois_data = analizar_whois_abuso(ip_dst)
                     
-                    # Plantilla HTML para Blacklist
                     asunto = f"[IDS ALERTA - MALWARE] Conexión bloqueada hacia IP: {ip_dst}"
                     cuerpo_html = f"""
                     <div style="font-family: Arial, sans-serif; color: #333;">
@@ -544,9 +500,7 @@ def procesar_paquete(paquete):
     finally:
         local_session.close()
 
-# ==========================================
-# 4. CAPTURA Y CONFIGURACIÓN DE RED
-# ==========================================
+# §IC-04 
 def detectar_interfaz_y_red():
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -564,9 +518,7 @@ def arrancar_sniffer():
     if interfaz:
         sniff(iface=interfaz, prn=procesar_paquete, store=False, promisc=True)
 
-# ==========================================
-# 5. INTERFAZ GRÁFICA SOC (RICH)
-# ==========================================
+# §IC-05
 def generar_interfaz():
     local_session = Session()
     try:
@@ -606,9 +558,7 @@ def generar_interfaz():
     layout["footer"].update(Panel(Align.center(Text.from_markup(ctrls), vertical="middle"), border_style="cyan"))
     return layout
 
-# ==========================================
-# 6. REPORTES Y SONDEO
-# ==========================================
+# §IC-06
 def ejecutar_reporte_soc(tipo, horas=0):
     os.system('cls' if os.name == 'nt' else 'clear')
     print("\n\033[44m\033[97m  MÓDULO DE EXPORTACIÓN FORENSE  \033[0m\n")
@@ -656,9 +606,7 @@ def realizar_sondeo_arp():
     except Exception as e:
         print(f"[-] Error en sondeo: {e}")
 
-# ==========================================
-# 7. RUTINAS PRINCIPALES Y MENÚ
-# ==========================================
+# §IC-07 
 def auto_autorizar_maquina_actual():
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.connect(("8.8.8.8", 80))
@@ -729,7 +677,6 @@ def iniciar_soc_en_vivo():
     SISTEMA_ACTIVO, OFFSET_PANTALLA, PAUSA_INTERFAZ, TIEMPO_INICIO = True, 0, False, hora_local()
     cargar_cache_listas()
     
-    # Detección y sondeo al arranque
     interfaz, _, prefijo = detectar_interfaz_y_red()
     if prefijo: RED_LOCAL_PREFIJO = prefijo
     realizar_sondeo_arp()
