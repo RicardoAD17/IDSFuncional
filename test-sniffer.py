@@ -1,4 +1,3 @@
-# test_sniffer.py
 import time
 import os
 from dotenv import load_dotenv
@@ -7,10 +6,10 @@ from modelos_db import Session, EquipoAutorizado, ListaNegraIP
 
 load_dotenv()
 
-# Cargar cache igual que en el IDS real
 CACHE_EQUIPOS_AUTORIZADOS = {}
 RATE_LIMIT_CACHE = {}
 
+# §TS-01
 def cargar_cache():
     global CACHE_EQUIPOS_AUTORIZADOS
     s = Session()
@@ -22,6 +21,7 @@ def cargar_cache():
         print(f"    → {mac} : {ip}")
     print()
 
+# §TS-02 
 def analizar_paquete(paquete):
     if not (paquete.haslayer(Ether) and paquete.haslayer(IP)):
         return
@@ -29,16 +29,18 @@ def analizar_paquete(paquete):
     mac_src = paquete[Ether].src
     ip_src  = paquete[IP].src
 
-    # Filtrar loopback y DHCP
+     # §TS-03
     if ip_src.startswith("127.") or ip_src == "0.0.0.0":
         return
 
+    # §TS-04
     ip_autorizada = CACHE_EQUIPOS_AUTORIZADOS.get(mac_src)
     autorizado = (ip_autorizada == ip_src)
 
     estado = "✓ AUTORIZADO" if autorizado else "✗ NO AUTORIZADO"
     print(f"[{estado}]  MAC: {mac_src}  |  IP: {ip_src}")
 
+    # §TS-05
     if not autorizado:
         tiempo_actual = time.time()
         ultimo = RATE_LIMIT_CACHE.get(ip_src, 0)
@@ -61,6 +63,7 @@ print()
 
 cargar_cache()
 
+#§TS-06
 sniff(prn=analizar_paquete, store=False, timeout=30)
 
 print("\n[*] Captura terminada.")

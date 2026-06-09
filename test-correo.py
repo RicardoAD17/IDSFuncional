@@ -1,4 +1,3 @@
-# test_correo.py
 import os
 import smtplib
 from email.message import EmailMessage
@@ -6,12 +5,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# §TC-01
 REMITENTE = os.getenv("REMITENTE_EMAIL")
 PASSWORD = os.getenv("REMITENTE_PASSWORD")
 
 print(f"[*] Remitente cargado: {REMITENTE}")
 print(f"[*] Password cargado:  {'✓ (presente)' if PASSWORD else '✗ (VACÍO)'}")
 
+#§TC-02
 if not REMITENTE or not PASSWORD:
     print("[-] PROBLEMA: Faltan variables en .env — revisa que el archivo exista y tenga:")
     print("    REMITENTE_EMAIL=tucorreo@gmail.com")
@@ -22,6 +23,7 @@ destinatario = input(f"\n¿A qué correo enviar la prueba? (Enter para usar {REM
 if not destinatario:
     destinatario = REMITENTE
 
+# §TC-03
 msg = EmailMessage()
 msg['Subject'] = "[IDS TEST] Prueba de alerta"
 msg['From'] = REMITENTE
@@ -29,6 +31,7 @@ msg['To'] = destinatario
 msg.set_content("Si recibes esto, el sistema de alertas funciona correctamente.")
 
 print("\n--- Intento 1: SMTP_SSL puerto 465 ---")
+# §TC-04
 try:
     with smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=10) as server:
         print("[*] Conexión establecida...")
@@ -40,6 +43,7 @@ try:
 except Exception as e:
     print(f"[-] SSL:465 falló → {e}")
 
+# §TC-05 
 print("\n--- Intento 2: STARTTLS puerto 587 ---")
 try:
     with smtplib.SMTP('smtp.gmail.com', 587, timeout=10) as server:

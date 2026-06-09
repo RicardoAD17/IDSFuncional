@@ -1,15 +1,16 @@
-# descargar_amenazas.py
 import urllib.request
 from dotenv import load_dotenv
-from modelos_db import Session, ListaNegraIP  # ← usa el Session del IDS, ya tiene SQLCipher
+from modelos_db import Session, ListaNegraIP  
 
 load_dotenv()
 
 def descargar_lista_inteligencia():
+    
+    # §TH-01
     url = "https://feodotracker.abuse.ch/downloads/ipblocklist.txt"
     print("[*] Descargando base de datos de amenazas globales (Feodo Tracker)...")
     
-    session = Session()  # ← esta ya tiene la clave cifrada configurada
+    session = Session()  
     try:
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
         with urllib.request.urlopen(req, timeout=15) as response:
@@ -19,12 +20,16 @@ def descargar_lista_inteligencia():
         contador_duplicadas = 0
 
         for linea in lineas:
+             # §TH-02
             if linea.startswith("#") or not linea.strip():
                 continue
             ip = linea.strip().split()[0]
 
+            # §TH-03
             existe = session.query(ListaNegraIP).filter_by(ip_maliciosa=ip).first()
             if not existe:
+
+                # §TH-04
                 session.add(ListaNegraIP(
                     ip_maliciosa=ip,
                     descripcion="Feodo_Tracker — Botnet/C2"

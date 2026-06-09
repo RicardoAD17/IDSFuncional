@@ -1,4 +1,3 @@
-# test_flujo_completo.py
 import os
 import time
 import threading
@@ -10,6 +9,7 @@ from modelos_db import Session, UsuarioIAM
 
 load_dotenv()
 
+# §TF-01
 def obtener_nombre_equipo(ip):
     try:
         nombre, _, _ = socket.gethostbyaddr(ip)
@@ -17,9 +17,11 @@ def obtener_nombre_equipo(ip):
     except:
         return "Host_No_Resuelto"
 
+#§TF-02
 def enviar_alerta_estructurada(asunto, cuerpo):
     print(f"\n[*] enviar_alerta_estructurada() ejecutándose en hilo...")
     
+    # §TF-03
     local_session = Session()
     try:
         admin = local_session.query(UsuarioIAM).filter_by(rol='ADMIN').first()
@@ -32,6 +34,7 @@ def enviar_alerta_estructurada(asunto, cuerpo):
         print(f"    email    : {admin.email}")
         print(f"    rol      : {admin.rol}")
 
+    # §TF-04
     if not admin or not admin.email:
         print("[-] PROBLEMA ENCONTRADO: No hay admin con email en la BD")
         print("    Solución: ejecuta python crear_admin.py y asegúrate de poner el email")
@@ -46,6 +49,7 @@ def enviar_alerta_estructurada(asunto, cuerpo):
         print("[-] PROBLEMA ENCONTRADO: Variables .env no cargadas en este contexto")
         return
 
+    # §TF-05
     msg = EmailMessage()
     msg['Subject'] = asunto
     msg['From']    = REMITENTE
@@ -60,7 +64,7 @@ def enviar_alerta_estructurada(asunto, cuerpo):
     except Exception as e:
         print(f"[-] Error al enviar: {e}")
 
-# --- Simular exactamente lo que haría procesar_paquete ---
+# §TF-06
 ip_src   = "192.168.1.69"
 mac_src  = "28:d0:43:8d:da:b0"
 tipo     = "TCP/443"
@@ -84,13 +88,13 @@ cuerpo = (
     f"Requiere autorización en el panel IAM."
 )
 
-# Lanzar igual que en el IDS real — en un hilo daemon
+# §TF-07
 hilo = threading.Thread(
     target=enviar_alerta_estructurada,
     args=("IDS TEST: Intruso detectado", cuerpo),
     daemon=True
 )
 hilo.start()
-hilo.join(timeout=20)  # esperar hasta 20 segundos
+hilo.join(timeout=20)  
 
 print("\n[*] Test terminado.")

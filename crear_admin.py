@@ -4,23 +4,23 @@ from modelos_db import Session, UsuarioIAM
 def crear_administrador():
     session = Session()
     
-    # 1. Verificar si ya existe un admin para no duplicar
+    # §CA-01
     if session.query(UsuarioIAM).filter_by(rol='ADMIN').first():
         print("[!] ¡Ya existe un administrador en la base de datos!")
         session.close()
         return
 
     print("--- CREACIÓN DE ADMINISTRADOR INICIAL ---")
+
+    # §CA-02
     user = input("Nombre de usuario: ").strip()
     password = input("Contraseña: ").strip()
     email = input("Correo electrónico para alertas: ").strip()
 
-    # 2. Cifrar la contraseña con bcrypt (importante para la seguridad)
+    # §CA-03
     hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-
-    # 3. Crear el objeto usuario
-    # Nota: Asegúrate de añadir el campo 'email' a tu modelo si no lo tienes,
-    # o si prefieres, simplemente guarda el usuario y actualiza el email después.
+    
+    # §CA-04
     nuevo_admin = UsuarioIAM(username=user, password_hash=hashed, rol='ADMIN')
     
     try:
